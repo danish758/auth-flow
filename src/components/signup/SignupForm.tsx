@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useForm, useWatch, Controller } from 'react-hook-form'
+import { Link, useBlocker } from 'react-router-dom'
 import { CheckCircle2 } from 'lucide-react'
 import FormInput from '../ui/FormInput'
 import Checkbox from '../ui/Checkbox'
 import Button from '../ui/Button'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import PasswordStrengthBar from './PasswordStrengthBar'
 import CountrySelect from './CountrySelect'
 import GenderSelect from './GenderSelect'
 import { isPasswordValid } from '../../lib/password'
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning'
 
 interface SignupFormValues {
   email: string
@@ -28,7 +31,7 @@ export default function SignupForm() {
     handleSubmit,
     control,
     reset,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors, isValid, isDirty, isSubmitting },
   } = useForm<SignupFormValues>({
     mode: 'onChange',
     defaultValues: {
@@ -43,42 +46,47 @@ export default function SignupForm() {
 
   const password = useWatch({ control, name: 'password' })
 
+  // Warn about unsaved work only once the user has actually changed something,
+  // and not while submitting or after a successful submit.
+  const shouldWarn = isDirty && !isSubmitting && !submitted
+
+  // Close/refresh) - native dialog.
+  useUnsavedChangesWarning(shouldWarn)
+  // In-app route changes → our custom dialog.
+  const blocker = useBlocker(shouldWarn)
+
   async function onSubmit() {
     // Simulate a network request — frontend only, no real API.
     await new Promise((resolve) => setTimeout(resolve, 1500))
     setSubmitted(true)
   }
 
-  if (submitted) {
-    return (
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/15">
-          <CheckCircle2
-            className="h-8 w-8 text-green-600 dark:text-green-500"
-            aria-hidden="true"
-          />
-        </div>
-        <h2 className="mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-          Account created
-        </h2>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-          Welcome aboard! Your account has been successfully created.
-        </p>
-        <Button
-          type="button"
-          onClick={() => {
-            reset()
-            setSubmitted(false)
-          }}
-          className="mt-6"
-        >
-          Create another account
-        </Button>
+  const content = submitted ? (
+    <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/15">
+        <CheckCircle2
+          className="h-8 w-8 text-green-600 dark:text-green-500"
+          aria-hidden="true"
+        />
       </div>
-    )
-  }
-
-  return (
+      <h2 className="mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+        Account created
+      </h2>
+      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        Welcome aboard! Your account has been successfully created.
+      </p>
+      <Button
+        type="button"
+        onClick={() => {
+          reset()
+          setSubmitted(false)
+        }}
+        className="mt-6"
+      >
+        Create another account
+      </Button>
+    </div>
+  ) : (
     <form
       onSubmit={handleSubmit(onSubmit)}
       noValidate
@@ -89,7 +97,7 @@ export default function SignupForm() {
           Create your account
         </h1>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Sign up to get started - it only takes a minute.
+          Sign up to get started — it only takes a minute.
         </p>
       </div>
 
@@ -201,6 +209,31 @@ export default function SignupForm() {
       >
         Continue
       </Button>
+
+      <p className="mt-5 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        Already have an account?{' '}
+        <Link
+          to="/login"
+          className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+        >
+          Sign in
+        </Link>
+      </p>
     </form>
+  )
+
+  return (
+    <>
+      {content}
+      <ConfirmDialog
+        open={blocker.state === 'blocked'}
+        title="Leave without saving?"
+        description="You've started filling out this form. If you leave now, the information you entered will be lost."
+        confirmLabel="Leave anyway"
+        cancelLabel="Stay on page"
+        onConfirm={() => blocker.proceed?.()}
+        onCancel={() => blocker.reset?.()}
+      />
+    </>
   )
 }
