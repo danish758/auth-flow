@@ -11,7 +11,7 @@ export default function LandingPage() {
         Welcome to auth-flow
       </h1>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-        A demo of a polished, accessible authentication experience — with an
+        A demo of a polished, accessible authentication experience - with an
         unsaved-changes guard that warns you before you lose your work.
       </p>
 
