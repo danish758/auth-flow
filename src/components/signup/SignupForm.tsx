@@ -38,7 +38,7 @@ export default function SignupForm() {
       email: '',
       username: '',
       password: '',
-      country: '',
+      country: 'Pakistan',
       gender: '',
       terms: false,
     },
@@ -97,7 +97,7 @@ export default function SignupForm() {
           Create your account
         </h1>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Sign up to get started — it only takes a minute.
+          Sign up to get started - it only takes a minute.
         </p>
       </div>
 
